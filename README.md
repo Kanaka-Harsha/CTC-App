@@ -1,10 +1,7 @@
-<div align="center">
-  <img src="docs/assets/banner.png" alt="CTC App Banner" width="100%" />
-
-  <h1>📹 Citizen Traffic Camera (CTC)</h1>
+<h1>📹 Citizen Traffic Camera (CTC)</h1>
   <p><strong>A Cloud-Native Evidence Portal for Traffic Incident Reporting & Analysis</strong></p>
 
-  <p>
+<p>
     <img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
     <img src="https://img.shields.io/badge/Backend-Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
     <img src="https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
@@ -66,13 +63,13 @@ graph TD
 
 ## 🛠️ Technology Stack
 
-| Domain | Technologies |
-| :--- | :--- |
-| **Frontend** | React, Vite, TailwindCSS, AWS CloudFront |
-| **Backend** | Python (FastAPI/Flask), JWT, Boto3 |
-| **Database** | AWS RDS PostgreSQL (Master + Read Replicas) |
-| **Cloud & Infrastructure** | AWS S3, SQS, Lambda, WAF, ALB, EC2 |
-| **AI / Machine Learning** | AWS Rekognition, Custom YOLO models |
+| Domain                     | Technologies                                |
+| :------------------------- | :------------------------------------------ |
+| **Frontend**               | React, Vite, TailwindCSS, AWS CloudFront    |
+| **Backend**                | Python (FastAPI/Flask), JWT, Boto3          |
+| **Database**               | AWS RDS PostgreSQL (Master + Read Replicas) |
+| **Cloud & Infrastructure** | AWS S3, SQS, Lambda, WAF, ALB, EC2          |
+| **AI / Machine Learning**  | AWS Rekognition, Custom YOLO models         |
 
 ---
 
@@ -81,22 +78,24 @@ graph TD
 The database is heavily normalized to ensure data integrity and efficient querying.
 
 ### 👥 Users Table
-| Column | Type | Description |
-| :--- | :--- | :--- |
-| `user_id` | UUID | Primary Key |
-| `phone_number` | VARCHAR | Encrypted contact info |
-| `aadhaar_hash` | VARCHAR | Redacted national identifier |
-| `created_at` | TIMESTAMP | Account creation date |
+
+| Column         | Type      | Description                  |
+| :------------- | :-------- | :--------------------------- |
+| `user_id`      | UUID      | Primary Key                  |
+| `phone_number` | VARCHAR   | Encrypted contact info       |
+| `aadhaar_hash` | VARCHAR   | Redacted national identifier |
+| `created_at`   | TIMESTAMP | Account creation date        |
 
 ### 📹 Incidents Table
-| Column | Type | Description |
-| :--- | :--- | :--- |
-| `incident_id` | UUID | Primary Key |
-| `user_id` | UUID | Foreign Key (Users) |
-| `incident_type` | VARCHAR | Type (e.g., Collision, Violation) |
-| `s3_uri` | VARCHAR | Direct link to evidence |
-| `gps_metadata` | POINT | Geographical coordinates |
-| `ai_labels` | JSONB | Extracted insights (Vehicle type, etc.) |
+
+| Column          | Type    | Description                             |
+| :-------------- | :------ | :-------------------------------------- |
+| `incident_id`   | UUID    | Primary Key                             |
+| `user_id`       | UUID    | Foreign Key (Users)                     |
+| `incident_type` | VARCHAR | Type (e.g., Collision, Violation)       |
+| `s3_uri`        | VARCHAR | Direct link to evidence                 |
+| `gps_metadata`  | POINT   | Geographical coordinates                |
+| `ai_labels`     | JSONB   | Extracted insights (Vehicle type, etc.) |
 
 ---
 
@@ -112,6 +111,7 @@ The database is heavily normalized to ensure data integrity and efficient queryi
 ### Installation & Setup
 
 1. **Clone the Repository**
+
    ```bash
    git clone https://github.com/your-org/ctc_app.git
    cd ctc_app
@@ -119,6 +119,7 @@ The database is heavily normalized to ensure data integrity and efficient queryi
 
 2. **Environment Variables**
    Create a `.env` file in the root directory (reference the `.env.example` file if available).
+
    ```env
    DATABASE_URL=postgresql://user:password@localhost:5432/ctc_db
    AWS_ACCESS_KEY_ID=your_access_key
@@ -129,6 +130,7 @@ The database is heavily normalized to ensure data integrity and efficient queryi
    ```
 
 3. **Backend Setup**
+
    ```bash
    cd backend
    python -m venv venv
@@ -139,6 +141,7 @@ The database is heavily normalized to ensure data integrity and efficient queryi
    ```
 
 4. **Frontend Setup**
+
    ```bash
    cd frontend
    npm install
