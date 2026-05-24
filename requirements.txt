@@ -1,0 +1,11 @@
+boto3
+secrets
+pydantic
+psycopg2
+os
+logging
+hashlib
+fastapi
+dotenv
+slowapi
+uuid
