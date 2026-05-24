@@ -9,7 +9,6 @@
 *.njsproj
 *.sln
 *.sw?
-Learning-Docs/
 Secrets/
 
 # Frontend (Node.js / React / Vite)
