@@ -17,7 +17,7 @@ CREATE TABLE reports (
 	incident_ts TIMESTAMP NOT NULL,
 	incident_location VARCHAR(200) NOT NULL,
 	incident_type VARCHAR(50) NOT NULL,
-	desctiption TEXT,
+	description TEXT,
 
 	video_link TEXT NOT NULL,
 	ai_status VARCHAR(50) DEFAULT 'PENDING',
@@ -29,4 +29,5 @@ CREATE TABLE reports (
 DROP TABLE reports CASCADE;
 
 SELECT * FROM users;
+SELECT * FROM reports;
 DELETE FROM users;
