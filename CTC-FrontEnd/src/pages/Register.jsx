@@ -6,6 +6,7 @@ function Register() {
   const [formData, setFormData] = useState({
     name: '',
     phone_no: '',
+    email: '',
     aadhaar_hash: '',
   });
   const [loading, setLoading] = useState(false);
@@ -17,6 +18,7 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('[Register] Step 1: Submitting registration form', formData);
     setLoading(true);
     setError('');
 
@@ -29,9 +31,11 @@ function Register() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('[Register] Registration failed:', errorData.detail);
         throw new Error(errorData.detail || 'Registration failed');
       }
 
+      console.log('[Register] Registration successful! Redirecting to /login...');
       alert('Registration successful! Please login.');
       navigate('/login');
     } catch (err) {
@@ -60,6 +64,11 @@ function Register() {
         </div>
 
         <div className="input-group">
+          <label htmlFor="email">Email Address</label>
+          <input type="email" id="email" value={formData.email} onChange={handleChange} placeholder="user@example.com" required />
+        </div>
+
+        <div className="input-group">
           <label htmlFor="aadhaar_hash">Aadhaar Number</label>
           <input type="text" id="aadhaar_hash" value={formData.aadhaar_hash} onChange={handleChange} placeholder="12-digit Aadhaar number" required />
         </div>
@@ -71,7 +80,7 @@ function Register() {
 
       <div style={{ textAlign: 'center' }}>
         <p>Already have an account?</p>
-        <Link to="/login" style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}>
+        <Link to="/login" className="btn-secondary">
           Back to Login
         </Link>
       </div>

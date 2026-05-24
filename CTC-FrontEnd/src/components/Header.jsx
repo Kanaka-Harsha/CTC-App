@@ -1,16 +1,35 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 function Header() {
   const location = useLocation();
-  const isLogin = location.pathname === '/login';
+  const navigate = useNavigate();
+  const isLoginPage = location.pathname === '/login';
+  
+  const [isAuth, setIsAuth] = useState(localStorage.getItem('isAuth') === 'true');
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setIsAuth(localStorage.getItem('isAuth') === 'true');
+    };
+    window.addEventListener('authChange', handleAuthChange);
+    return () => window.removeEventListener('authChange', handleAuthChange);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuth');
+    window.dispatchEvent(new Event('authChange'));
+    navigate('/');
+  };
 
   return (
     <header className="app-header">
-      <Link to="/">
+      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <img src="/CTC_Main.png" alt="CTC App Logo" style={{ height: '32px' }} />
         <h1>CTC App</h1>
       </Link>
-      {!isLogin && <Link to="/login">Login</Link>}
+      {!isAuth && !isLoginPage && <Link to="/login" className="btn-nav">Login</Link>}
+      {isAuth && <button onClick={handleLogout} className="btn-nav" style={{ border: 'none', cursor: 'pointer' }}>Logout</button>}
     </header>
   );
 }

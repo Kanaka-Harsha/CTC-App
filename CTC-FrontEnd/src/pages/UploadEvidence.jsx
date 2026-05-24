@@ -1,16 +1,68 @@
-import React from 'react';
-import { UploadCloud, MapPin } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { UploadCloud, MapPin, CheckCircle } from 'lucide-react';
 
 function UploadEvidence() {
+  const fileInputRef = useRef(null);
+  const [selectedFileName, setSelectedFileName] = useState('');
+  const [locationStr, setLocationStr] = useState('');
+  
+  const handleBoxClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFileName(e.target.files[0].name);
+    }
+  };
+
+  const handleGetLocation = (e) => {
+    e.preventDefault();
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocationStr(`${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`);
+        },
+        (error) => {
+          alert(`Location Error: ${error.message}. Please check your browser/system location permissions.`);
+          console.error(error);
+        },
+        { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      alert('Geolocation is not supported by this browser.');
+    }
+  };
   return (
     <div>
       <h1>Submit Official Report</h1>
       <p>Please fill out the details accurately. This information may be reviewed by authorities.</p>
 
-      <div className="card" style={{ textAlign: 'center', borderStyle: 'dashed', borderWidth: '2px', cursor: 'pointer' }}>
-        <UploadCloud size={48} color="var(--primary-color)" style={{ margin: '0 auto var(--spacing-sm)' }} />
-        <h3 style={{ marginBottom: '8px' }}>Tap to Upload Evidence</h3>
-        <p style={{ fontSize: '14px', marginBottom: 0 }}>Select Video (Dashcam/CCTV) or Images</p>
+      <div 
+        className="card" 
+        style={{ textAlign: 'center', borderStyle: 'dashed', borderWidth: '2px', cursor: 'pointer', padding: 'var(--spacing-xl) var(--spacing-md)' }}
+        onClick={handleBoxClick}
+      >
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          style={{ display: 'none' }} 
+          accept="video/*,image/*" 
+          onChange={handleFileChange}
+        />
+        {selectedFileName ? (
+          <>
+            <CheckCircle size={48} color="green" style={{ margin: '0 auto var(--spacing-sm)' }} />
+            <h3 style={{ marginBottom: '8px', color: 'green' }}>File Selected</h3>
+            <p style={{ fontSize: '14px', marginBottom: 0 }}>{selectedFileName}</p>
+          </>
+        ) : (
+          <>
+            <UploadCloud size={48} color="var(--primary-color)" style={{ margin: '0 auto var(--spacing-sm)' }} />
+            <h3 style={{ marginBottom: '8px' }}>Tap to Upload Evidence</h3>
+            <p style={{ fontSize: '14px', marginBottom: 0 }}>Select Video (Dashcam/CCTV) or Images</p>
+          </>
+        )}
       </div>
 
       <h2>Incident Details</h2>
@@ -23,8 +75,20 @@ function UploadEvidence() {
       <div className="input-group">
         <label htmlFor="location">Location</label>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <input type="text" id="location" placeholder="Street Name / Area" style={{ flex: 1 }} />
-          <button className="btn-secondary" style={{ padding: '0 16px', borderRadius: 'var(--border-radius)', cursor: 'pointer' }}>
+          <input 
+            type="text" 
+            id="location" 
+            placeholder="Street Name / GPS Coordinates" 
+            style={{ flex: 1 }} 
+            value={locationStr}
+            onChange={(e) => setLocationStr(e.target.value)}
+          />
+          <button 
+            className="btn-secondary" 
+            style={{ padding: '0 16px', borderRadius: 'var(--border-radius)', cursor: 'pointer' }}
+            onClick={handleGetLocation}
+            title="Get Current GPS Location"
+          >
             <MapPin size={24} />
           </button>
         </div>
