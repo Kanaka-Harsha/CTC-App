@@ -1,13 +1,15 @@
 import boto3
 import json
+import logging
+from fastapi import HTTPException
 
 
 def send_sms_via_aws(phone_no:str, otp:str):
-sns_client=boto3.client('sns',region_name='ap-sount-1')
+    sns_client=boto3.client('sns',region_name='ap-south-1')
     try:
         response = sns_client.publish(
-            PhoneNumber=phone_number,
-            Message=message,
+            PhoneNumber=phone_no,
+            Message=f"Your OTP for login is {otp}",
             MessageAttributes={
                 'AWS.SNS.SMS.SMSType': {
                     'DataType': 'String',
