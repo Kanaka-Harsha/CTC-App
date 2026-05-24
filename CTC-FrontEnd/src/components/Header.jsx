@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 function Header() {
   const location = useLocation();
@@ -19,6 +20,7 @@ function Header() {
   const handleLogout = () => {
     localStorage.removeItem('isAuth');
     window.dispatchEvent(new Event('authChange'));
+    toast.success('Logged out successfully');
     navigate('/');
   };
 
@@ -28,7 +30,6 @@ function Header() {
         <img src="/CTC_Main.png" alt="CTC App Logo" style={{ height: '32px' }} />
         <h1>CTC App</h1>
       </Link>
-      {!isAuth && !isLoginPage && <Link to="/login" className="btn-nav">Login</Link>}
       {isAuth && <button onClick={handleLogout} className="btn-nav" style={{ border: 'none', cursor: 'pointer' }}>Logout</button>}
     </header>
   );

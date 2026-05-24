@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 function Register() {
   const navigate = useNavigate();
@@ -10,21 +11,53 @@ function Register() {
     aadhaar_hash: '',
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      toast.error("Name is required");
+      return false;
+    }
+    if (!/^\d{10}$/.test(formData.phone_no)) {
+      toast.error("Phone number must be exactly 10 digits");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address");
+      return false;
+    }
+    if (!/^\d{12}$/.test(formData.aadhaar_hash)) {
+      toast.error("Aadhaar number must be exactly 12 digits");
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
     console.log('[Register] Step 1: Submitting registration form', formData);
     setLoading(true);
-    setError('');
 
     try {
+      // Hash the Aadhaar number client-side using SHA-256
+      const encoder = new TextEncoder();
+      const data = encoder.encode(formData.aadhaar_hash);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashedAadhaar = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const submissionData = {
+        ...formData,
+        aadhaar_hash: hashedAadhaar
+      };
+
       // Sending as query parameters because the FastAPI backend expects query parameters
-      const queryParams = new URLSearchParams(formData).toString();
+      const queryParams = new URLSearchParams(submissionData).toString();
       const response = await fetch(`http://127.0.0.1:8000/users/register?${queryParams}`, {
         method: 'POST',
       });
@@ -36,10 +69,10 @@ function Register() {
       }
 
       console.log('[Register] Registration successful! Redirecting to /login...');
-      alert('Registration successful! Please login.');
+      toast.success('Registration successful! Please check your email (and SPAM folder) for confirmation, then login.', { duration: 5000 });
       navigate('/login');
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -50,7 +83,7 @@ function Register() {
       <h1>Create Account</h1>
       <p>Register to submit official incident reports.</p>
 
-      {error && <div style={{ color: 'red', marginBottom: '16px' }}>{error}</div>}
+      {/* Errors are now handled by toast notifications */}
 
       <form onSubmit={handleSubmit}>
         <div className="input-group">

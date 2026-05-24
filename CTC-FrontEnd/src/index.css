@@ -71,7 +71,7 @@ body {
   padding: var(--spacing-sm);
 }
 
-.app-header a.btn-nav {
+.app-header .btn-nav {
   background-color: var(--surface-color);
   color: var(--primary-color);
   padding: 8px 16px;
@@ -80,7 +80,7 @@ body {
   transition: opacity 0.2s;
 }
 
-.app-header a.btn-nav:hover {
+.app-header .btn-nav:hover {
   opacity: 0.9;
 }
 

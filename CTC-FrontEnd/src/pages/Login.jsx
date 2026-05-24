@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 function Login() {
   const navigate = useNavigate();
@@ -7,13 +8,47 @@ function Login() {
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState(1); // 1 = Email, 2 = OTP
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    let interval = null;
+    if (step === 2 && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (resendTimer === 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [step, resendTimer]);
+
+  const handleResendOtp = async () => {
+    if (resendTimer > 0) return;
+    toast.loading("Resending OTP...", { id: "resendToast" });
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/user/login?email=${email}`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to resend OTP');
+      }
+      toast.success("OTP resent successfully!", { id: "resendToast" });
+      setResendTimer(30); // Restart countdown
+    } catch (err) {
+      toast.error(err.message, { id: "resendToast" });
+    }
+  };
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
     console.log(`[Login] Step 1: Initiating OTP request for email: ${email}`);
     setLoading(true);
-    setError('');
 
     try {
       const response = await fetch(`http://127.0.0.1:8000/user/login?email=${email}`, {
@@ -28,8 +63,9 @@ function Login() {
 
       console.log('[Login] OTP sent successfully! Moving to Step 2 (Verification).');
       setStep(2); // Move to OTP verification step
+      setResendTimer(30); // Start 30s countdown
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -37,9 +73,12 @@ function Login() {
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
+    if (!/^\d{6}$/.test(otp)) {
+      toast.error("OTP must be exactly 6 digits");
+      return;
+    }
     console.log(`[Login] Step 2: Verifying OTP for email: ${email}`);
     setLoading(true);
-    setError('');
 
     try {
       const response = await fetch(`http://127.0.0.1:8000/user/login_check?email=${email}&otp=${otp}`, {
@@ -55,11 +94,12 @@ function Login() {
       console.log('[Login] Verification successful! Redirecting to /upload...');
       // Success!
       localStorage.setItem('isAuth', 'true');
+      localStorage.setItem('userEmail', email); // Save email for the report submission
       window.dispatchEvent(new Event('authChange'));
-      alert('Login successful!');
+      toast.success('Login successful!');
       navigate('/upload');
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -68,9 +108,9 @@ function Login() {
   return (
     <div>
       <h1>Login</h1>
-      <p>{step === 1 ? 'Sign in to view your reports or submit new evidence.' : 'Enter the code sent to your email.'}</p>
+      <p>{step === 1 ? 'Sign in to view your reports or submit new evidence.' : 'Enter the code sent to your email. (Please check your SPAM folder)'}</p>
 
-      {error && <div style={{ color: 'red', marginBottom: '16px' }}>{error}</div>}
+      {/* Errors are now handled by toast notifications */}
 
       {step === 1 && (
         <form onSubmit={handleSendOtp}>
@@ -112,6 +152,16 @@ function Login() {
             type="button" 
             className="btn-secondary" 
             style={{ width: '100%', marginTop: '16px', padding: '16px', borderRadius: '8px' }}
+            disabled={resendTimer > 0}
+            onClick={handleResendOtp}
+          >
+            {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : 'Resend OTP'}
+          </button>
+
+          <button 
+            type="button" 
+            className="btn-secondary" 
+            style={{ width: '100%', marginTop: '16px', padding: '16px', borderRadius: '8px', border: 'none', background: 'transparent', textDecoration: 'underline' }}
             onClick={() => setStep(1)}
           >
             Wrong email? Go back.
