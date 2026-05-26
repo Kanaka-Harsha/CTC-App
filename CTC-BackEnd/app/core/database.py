@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-db_url=os.getenv('DATABASE_URL')
+db_url=os.getenv('LOCAL_DATABASE_URL')
 
 def get_db_connection():
     try:

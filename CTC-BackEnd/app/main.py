@@ -32,9 +32,12 @@ app=FastAPI()
 s3_client=boto3.client('s3', region_name='ap-south-1', endpoint_url='https://s3.ap-south-1.amazonaws.com', config=Config(signature_version='s3v4'))
 bucket_name=os.getenv("AWS_VIDEO_BUCKET_NAME")
 
+raw_origins = os.getenv("ALLOWED_ORIGINS", "*")
+origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -179,3 +182,8 @@ def add_report(user_email: str, incident_ts: str, incident_location: str, incide
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
