@@ -70,23 +70,27 @@ function UploadEvidence() {
     e.preventDefault();
     
     if (!file || !datetime || !locationStr || !incidentType) {
+      console.warn("[DEV] Form validation failed. Missing required fields.");
       toast.error("Please fill in all required fields and select a file.");
       return;
     }
 
     setLoading(true);
+    console.log("[DEV] Starting report submission process with file:", file.name);
 
     try {
       // Step 1: Ask Backend for a Pre-signed S3 URL
-      toast.loading("Requesting secure upload link...", { id: "submitToast" });
+      console.log("[DEV] Requesting presigned URL from backend...");
+      toast.loading("Securely preparing your evidence...", { id: "submitToast" });
       
       const urlResponse = await fetch(`${API_BASE_URL}/report/presigned-url?filename=${encodeURIComponent(file.name)}&content_type=${encodeURIComponent(file.type)}`, {
         method: 'GET',
       });
 
       if (!urlResponse.ok) {
-        const err = await urlResponse.json();
-        throw new Error(err.detail || 'Failed to get secure upload link');
+        const err = await urlResponse.json().catch(() => ({}));
+        console.error("[DEV] Failed to get presigned URL. Server responded with:", err);
+        throw new Error('We encountered a small hiccup preparing your upload. Please try again.');
       }
 
       const urlData = await urlResponse.json();
@@ -94,11 +98,13 @@ function UploadEvidence() {
       const s3VideoLink = urlData.video_link;
 
       if (!presignedUrl || !s3VideoLink) {
-        throw new Error('Backend did not return valid S3 credentials');
+        console.error("[DEV] Backend did not return valid S3 credentials. Response:", urlData);
+        throw new Error('We encountered a small hiccup preparing your upload. Please try again.');
       }
 
       // Step 2: Upload directly to AWS S3 (bypassing backend)
-      toast.loading("Uploading video directly to AWS S3...", { id: "submitToast" });
+      console.log("[DEV] Uploading file directly to S3 URL:", presignedUrl.split('?')[0]); // Log without signature
+      toast.loading("Securely uploading your evidence...", { id: "submitToast" });
       
       const s3UploadResponse = await fetch(presignedUrl, {
         method: 'PUT',
@@ -109,11 +115,13 @@ function UploadEvidence() {
       });
 
       if (!s3UploadResponse.ok) {
-        throw new Error('Failed to upload video to AWS S3');
+        console.error("[DEV] S3 upload failed. HTTP status:", s3UploadResponse.status);
+        throw new Error('We had trouble uploading your file. Please check your internet connection and try again.');
       }
 
       // Step 3: Submit the database record with the final S3 link
-      toast.loading("Saving report to database...", { id: "submitToast" });
+      console.log("[DEV] Submitting report details to backend...");
+      toast.loading("Saving your report details...", { id: "submitToast" });
       const userEmail = localStorage.getItem('userEmail') || '';
       
       const submissionData = {
@@ -132,11 +140,13 @@ function UploadEvidence() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Database submission failed');
+        const errorData = await response.json().catch(() => ({}));
+        console.error("[DEV] Database submission failed. Server responded with:", errorData);
+        throw new Error('We received your file, but hit a bump saving your report details. Please try submitting again.');
       }
 
-      toast.success('Official Report Submitted Successfully!', { id: "submitToast", duration: 4000 });
+      console.log("[DEV] Report successfully submitted and saved.");
+      toast.success('Official Report Submitted Successfully! AI processing is being done in the background. Please check the report history after 10 minutes.', { id: "submitToast", duration: 8000 });
       
       // Reset form
       setFile(null);
@@ -146,6 +156,7 @@ function UploadEvidence() {
       setDescription('');
       
     } catch (error) {
+      console.error("[DEV] Caught error in handleSubmit:", error);
       toast.error(error.message, { id: "submitToast", duration: 8000 });
     } finally {
       setLoading(false);

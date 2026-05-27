@@ -7,6 +7,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      devOptions: {
+        enabled: true
+      },
       manifest: {
         name: 'Citizen Traffic Camera',
         short_name: 'CTC App',
@@ -16,8 +19,14 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'CTC_Main.png',
-            sizes: '192x192 512x512',
+            src: '/CTC_Main.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any maskable'
+          },
+          {
+            src: '/CTC_Main.png',
+            sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
           }
