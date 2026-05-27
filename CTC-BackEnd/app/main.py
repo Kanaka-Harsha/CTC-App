@@ -1,3 +1,4 @@
+import logging
 import psycopg2
 import psycopg2
 import boto3
@@ -18,6 +19,8 @@ from app.otp_services.email_utils import send_email_otp, send_confirm_email
 
 # sudo systemctl restart ctc-backend
 # sudo systemctl status ctc-backend
+# ctc-backend
+
 
 load_dotenv()
 AADHAAR_SALT = os.getenv("AADHAAR_SALT", "super_secret_default_salt_123!")
@@ -269,6 +272,44 @@ def get_reports(request: Request, email:str):
     except psycopg2.Error as e:
         logging.error(f"Database Failed To Fetch Report {e}")
         raise HTTPException(status_code=500, detail="Failed To Fetch Report From Database")
+    finally:
+        if 'cursor' in locals() and cursor:
+            cursor.close()
+        if 'conn' in locals() and conn:
+            conn.close()
+
+
+@app.get("/report/history/delete")
+@limiter.limit("3/minute")
+def delete_user_report(request: Request, rid:int):
+    logging.info(f"Deleting Report For User: {rid}")
+    conn=get_db_connection()
+    cursor=conn.cursor()
+    try:
+        query="SELECT video_link FROM reports WHERE id=%s"
+        cursor.execute(query,(rid,))
+        result=cursor.fetchone()
+        if not result:
+            raise HTTPException(status_code=404, detail="Report Not Found")
+        video_link=result[0]
+        
+        if video_link:
+            try:
+                object_key = video_link.split("/")[-1]
+                s3_client.delete_object(Bucket=bucket_name, Key=object_key)
+            except Exception as e:
+                logging.error(f"Failed to delete video from S3: {e}")
+
+        delete_query = "DELETE FROM reports WHERE id=%s"
+        cursor.execute(delete_query, (rid,))
+        conn.commit()
+        
+        return {"message": "Report deleted successfully"}
+        
+    except psycopg2.Error as e:
+        conn.rollback()
+        logging.error(f"Database Error Deleting Report {e}")
+        raise HTTPException(status_code=500, detail="Failed To Delete Report From Database")
     finally:
         if 'cursor' in locals() and cursor:
             cursor.close()
