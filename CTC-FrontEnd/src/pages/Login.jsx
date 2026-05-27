@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
 function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -10,6 +12,11 @@ function Login() {
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
 
+  useEffect(() => {
+    if (localStorage.getItem('isAuth') === 'true') {
+      navigate('/upload', { replace: true });
+    }
+  }, [navigate]);
   useEffect(() => {
     let interval = null;
     if (step === 2 && resendTimer > 0) {
@@ -26,7 +33,7 @@ function Login() {
     if (resendTimer > 0) return;
     toast.loading("Resending OTP...", { id: "resendToast" });
     try {
-      const response = await fetch(`http://127.0.0.1:8000/user/login?email=${email}`, {
+      const response = await fetch(`${API_BASE_URL}/user/login?email=${email}`, {
         method: 'POST',
       });
       if (!response.ok) {
@@ -51,7 +58,7 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/user/login?email=${email}`, {
+      const response = await fetch(`${API_BASE_URL}/user/login?email=${email}`, {
         method: 'POST',
       });
 
@@ -81,7 +88,7 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/user/login_check?email=${email}&otp=${otp}`, {
+      const response = await fetch(`${API_BASE_URL}/user/login_check?email=${email}&otp=${otp}`, {
         method: 'POST',
       });
 

@@ -1,8 +1,15 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Camera, ShieldAlert, LogIn } from 'lucide-react';
 
 function Home() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (localStorage.getItem('isAuth') === 'true') {
+      navigate('/upload', { replace: true });
+    }
+  }, [navigate]);
   return (
     <div style={{ textAlign: 'center' }}>
       <img src="/CTC_Main.png" alt="CTC Logo" style={{ width: '120px', marginBottom: 'var(--spacing-md)' }} />

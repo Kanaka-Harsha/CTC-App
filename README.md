@@ -6,7 +6,7 @@
     <img src="https://img.shields.io/badge/Backend-Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
     <img src="https://img.shields.io/badge/Database-PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL" />
     <img src="https://img.shields.io/badge/Cloud-AWS-232F3E?style=flat-square&logo=amazon-aws&logoColor=white" alt="AWS" />
-    <img src="https://img.shields.io/badge/AI-Rekognition%20%7C%20YOLO-FF6F00?style=flat-square" alt="AI/ML" />
+    <img src="https://img.shields.io/badge/AI-Rekognition%20%7C%20Gemini-FF6F00?style=flat-square" alt="AI/ML" />
   </p>
 </div>
 
@@ -14,21 +14,21 @@
 
 ## 📖 Overview
 
-The **Citizen Traffic Camera (CTC)** platform addresses the critical loss of incident data by providing a centralized, highly scalable portal for citizens to submit dashcam and CCTV footage. It empowers authorities with actionable, AI-analyzed evidence to enhance road safety and enforce traffic regulations effectively.
+The **Citizen Traffic Camera (CTC)** platform addresses the compulsory report analysis of the authorities and also prevent the critical loss of incident data by providing a centralized, highly scalable portal for citizens to submit dashcam and CCTV footage. It empowers authorities with actionable, AI-analyzed evidence to enhance road safety and enforce traffic regulations effectively.
 
 ### 🌟 Key Features
 
 - **Resilient Uploads:** Direct-to-cloud multipart uploads (5MB slices) ensure reliability even on shaky 3G/4G mobile networks.
-- **Automated Intelligence:** Asynchronous event-driven pipelines automatically extract metadata (e.g., vehicle types, collision detection) using AWS Rekognition and custom YOLO models.
-- **Secure Authentication:** Stateless JWT-based authentication paired with Mobile OTP for seamless and secure access.
-- **Scalable Infrastructure:** Designed with an event-driven architecture utilizing AWS S3, SQS, and Lambda to handle high traffic spikes seamlessly.
+- **Automated Intelligence:** Asynchronous event-driven pipelines automatically extract metadata (e.g., vehicle types, collision detection) using AWS Rekognition and Gemini models.
+- **Secure Authentication:** Stateless JWT-based authentication paired with Email OTP for seamless and secure access, Aadhaar data is stored in double hash along with SALTs in the database for privacy concerns.
+- **Scalable Infrastructure:** Designed with an event-driven architecture utilizing AWS S3, SQS, Lambda, EC2 and RDS to handle high traffic spikes seamlessly.
 - **Cost-Optimized Storage:** S3 Lifecycle policies automatically transition aging evidence to Glacier Deep Archive.
 
 ---
 
 ## 🏗️ System Architecture
 
-Our cloud-native architecture is built for **resilience, high availability, and performance**. The frontend securely streams large video files directly to S3 via pre-signed URLs, bypassing the application backend. An event-driven pipeline then processes the evidence asynchronously.
+My cloud-native architecture is built for **resilience, high availability, and performance**. The frontend divides the large video files into multiple parts and securely streams them directly to S3 via pre-signed URLs, bypassing the application backend. An event-driven pipeline then processes the evidence asynchronously.
 
 ```mermaid
 graph TD
@@ -63,13 +63,13 @@ graph TD
 
 ## 🛠️ Technology Stack
 
-| Domain                     | Technologies                                |
-| :------------------------- | :------------------------------------------ |
-| **Frontend**               | React, Vite, TailwindCSS, AWS CloudFront    |
-| **Backend**                | Python (FastAPI/Flask), JWT, Boto3          |
-| **Database**               | AWS RDS PostgreSQL (Master + Read Replicas) |
-| **Cloud & Infrastructure** | AWS S3, SQS, Lambda, WAF, ALB, EC2          |
-| **AI / Machine Learning**  | AWS Rekognition, Custom YOLO models         |
+| Domain                           | Technologies                             |
+| :------------------------------- | :--------------------------------------- |
+| **Frontend**               | React, Vite, TailwindCSS, AWS CloudFront |
+| **Backend**                | Python (FastAPI/Flask), JWT, Boto3       |
+| **Database**               | AWS RDS PostgreSQL                       |
+| **Cloud & Infrastructure** | AWS S3, SQS, Lambda, ALB, EC2, VPC       |
+| **AI / Machine Learning**  | AWS Rekognition, Gemini API              |
 
 ---
 
@@ -79,23 +79,25 @@ The database is heavily normalized to ensure data integrity and efficient queryi
 
 ### 👥 Users Table
 
-| Column         | Type      | Description                  |
-| :------------- | :-------- | :--------------------------- |
-| `user_id`      | UUID      | Primary Key                  |
-| `phone_number` | VARCHAR   | Encrypted contact info       |
-| `aadhaar_hash` | VARCHAR   | Redacted national identifier |
-| `created_at`   | TIMESTAMP | Account creation date        |
+| Column           | Type    | Description                  |
+| :--------------- | :------ | :--------------------------- |
+| `id`           | UUID    | Primary Key                  |
+| `name`         | VARCHAR | User's full name             |
+| `phone_no`     | VARCHAR | Encrypted contact info       |
+| `email`        | VARCHAR | User email address           |
+| `aadhaar_hash` | VARCHAR | Redacted national identifier |
 
-### 📹 Incidents Table
+### 📹 Reports Table
 
-| Column          | Type    | Description                             |
-| :-------------- | :------ | :-------------------------------------- |
-| `incident_id`   | UUID    | Primary Key                             |
-| `user_id`       | UUID    | Foreign Key (Users)                     |
-| `incident_type` | VARCHAR | Type (e.g., Collision, Violation)       |
-| `s3_uri`        | VARCHAR | Direct link to evidence                 |
-| `gps_metadata`  | POINT   | Geographical coordinates                |
-| `ai_labels`     | JSONB   | Extracted insights (Vehicle type, etc.) |
+| Column                | Type      | Description                       |
+| :-------------------- | :-------- | :-------------------------------- |
+| `id`                | UUID      | Primary Key                       |
+| `user_id`           | UUID      | Foreign Key (Users)               |
+| `incident_ts`       | TIMESTAMP | Timestamp of the incident         |
+| `incident_location` | VARCHAR   | Geographical location / address   |
+| `incident_type`     | VARCHAR   | Type (e.g., Collision, Violation) |
+| `description`       | TEXT      | Description of the incident       |
+| `video_link`        | VARCHAR   | Direct link to evidence           |
 
 ---
 
@@ -103,9 +105,8 @@ The database is heavily normalized to ensure data integrity and efficient queryi
 
 ### Prerequisites
 
-- Node.js (v18+)
 - Python (3.10+)
-- PostgreSQL installed locally or via Docker
+- PostgreSQL installed locally
 - AWS CLI configured with appropriate IAM permissions
 
 ### Installation & Setup
@@ -113,10 +114,9 @@ The database is heavily normalized to ensure data integrity and efficient queryi
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/your-org/ctc_app.git
-   cd ctc_app
+   git clone https://github.com/Kanaka-Harsha/CTC-App.git
+   cd CTC-App
    ```
-
 2. **Environment Variables**
    Create a `.env` file in the root directory (reference the `.env.example` file if available).
 
@@ -124,26 +124,25 @@ The database is heavily normalized to ensure data integrity and efficient queryi
    DATABASE_URL=postgresql://user:password@localhost:5432/ctc_db
    AWS_ACCESS_KEY_ID=your_access_key
    AWS_SECRET_ACCESS_KEY=your_secret_key
-   AWS_REGION=us-east-1
-   S3_BUCKET_NAME=ctc-evidence-bucket
-   JWT_SECRET=your_jwt_secret
-   ```
+   AWS_REGION=ap-south-1
+   AWS_VIDEO_BUCKET_NAME=ctc-evidence-bucket
+   AADHAAR_SALT=your_salt
 
+   # More mentioned in the .env.example file
+   ```
 3. **Backend Setup**
 
    ```bash
-   cd backend
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    pip install -r requirements.txt
-   python manage.py migrate
-   python app.py
+   cd CTC-BackEnd
+   fastapi dev app/main.py
    ```
-
 4. **Frontend Setup**
 
    ```bash
-   cd frontend
+   cd CTC-FrontEnd
    npm install
    npm run dev
    ```

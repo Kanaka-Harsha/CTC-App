@@ -132,7 +132,7 @@ def login_user(request: Request, email: str):
 
 @app.post("/user/login_check")
 @limiter.limit("3/minute")
-def login_verify(email:str, otp:str):
+def login_verify(request: Request, email:str, otp:str):
     logging.info(f"Verifying OTP for user: {email}")
     if email not in otp_cache:
         raise HTTPException(status_code=400, detail="OTP expired or not requested.")
@@ -146,7 +146,7 @@ def login_verify(email:str, otp:str):
 
 @app.get("/report/presigned-url")
 @limiter.limit("3/minute")
-def get_presigned_url(filename:str, content_type:str):
+def get_presigned_url(request: Request, filename:str, content_type:str):
     logging.info(f"Generating New Presigned URL for {filename}")
     unique_filename=f"{uuid.uuid4()}_{filename}"
     try:
@@ -168,7 +168,7 @@ def get_presigned_url(filename:str, content_type:str):
 
 @app.post("/report/submit")
 @limiter.limit("3/minute")
-def add_report(user_email: str, incident_ts: str, incident_location: str, incident_type: str, description: str, video_link: str):
+def add_report(request: Request, user_email: str, incident_ts: str, incident_location: str, incident_type: str, description: str, video_link: str):
     logging.info(f"Uploading User Report.")
     try:
         conn=get_db_connection()

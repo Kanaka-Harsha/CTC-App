@@ -6,6 +6,8 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import UploadEvidence from './pages/UploadEvidence';
+import Profile from './pages/Profile';
+import ReportHistory from './pages/ReportHistory';
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/upload" element={<UploadEvidence />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/history" element={<ReportHistory />} />
           </Routes>
         </main>
       </div>

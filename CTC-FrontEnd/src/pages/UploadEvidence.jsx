@@ -2,6 +2,8 @@ import React, { useRef, useState } from 'react';
 import { UploadCloud, MapPin, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
 function UploadEvidence() {
   const fileInputRef = useRef(null);
   
@@ -78,7 +80,7 @@ function UploadEvidence() {
       // Step 1: Ask Backend for a Pre-signed S3 URL
       toast.loading("Requesting secure upload link...", { id: "submitToast" });
       
-      const urlResponse = await fetch(`http://127.0.0.1:8000/report/presigned-url?filename=${encodeURIComponent(file.name)}&content_type=${encodeURIComponent(file.type)}`, {
+      const urlResponse = await fetch(`${API_BASE_URL}/report/presigned-url?filename=${encodeURIComponent(file.name)}&content_type=${encodeURIComponent(file.type)}`, {
         method: 'GET',
       });
 
@@ -125,7 +127,7 @@ function UploadEvidence() {
 
       const queryParams = new URLSearchParams(submissionData).toString();
 
-      const response = await fetch(`http://127.0.0.1:8000/report/submit?${queryParams}`, {
+      const response = await fetch(`${API_BASE_URL}/report/submit?${queryParams}`, {
         method: 'POST',
       });
 

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+
 function Register() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -58,7 +60,7 @@ function Register() {
 
       // Sending as query parameters because the FastAPI backend expects query parameters
       const queryParams = new URLSearchParams(submissionData).toString();
-      const response = await fetch(`http://127.0.0.1:8000/users/register?${queryParams}`, {
+      const response = await fetch(`${API_BASE_URL}/users/register?${queryParams}`, {
         method: 'POST',
       });
 

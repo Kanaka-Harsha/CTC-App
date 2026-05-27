@@ -7,7 +7,6 @@ CREATE TABLE users (
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-DROP TABLE users CASCADE;
 
 CREATE TABLE reports (
 	id SERIAL PRIMARY KEY UNIQUE NOT NULL,
@@ -26,8 +25,15 @@ CREATE TABLE reports (
 	report_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP	
 );
 
+DROP TABLE users CASCADE;
 DROP TABLE reports CASCADE;
 
 SELECT * FROM users;
 SELECT * FROM reports;
 DELETE FROM users;
+
+
+ALTER TABLE users
+ADD user_location VARCHAR(200);
+
+psql -h ctc-database.cp42a6gsihil.ap-south-1.rds.amazonaws.com -p 5432 -U ctc_postgres -d ctc_postgres
