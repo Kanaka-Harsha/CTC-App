@@ -11,6 +11,7 @@ function Register() {
     phone_no: '',
     email: '',
     aadhaar_hash: '',
+    user_location: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -34,6 +35,10 @@ function Register() {
     }
     if (!/^\d{12}$/.test(formData.aadhaar_hash)) {
       toast.error("Aadhaar number must be exactly 12 digits");
+      return false;
+    }
+    if (!formData.user_location.trim()) {
+      toast.error("Location is required");
       return false;
     }
     return true;
@@ -106,6 +111,11 @@ function Register() {
         <div className="input-group">
           <label htmlFor="aadhaar_hash">Aadhaar Number</label>
           <input type="text" id="aadhaar_hash" value={formData.aadhaar_hash} onChange={handleChange} placeholder="12-digit Aadhaar number" required />
+        </div>
+
+        <div className="input-group">
+          <label htmlFor="user_location">Location</label>
+          <input type="text" id="user_location" value={formData.user_location} onChange={handleChange} placeholder="Your City/Area" required />
         </div>
 
         <button type="submit" className="btn-primary" style={{ marginBottom: 'var(--spacing-lg)' }} disabled={loading}>

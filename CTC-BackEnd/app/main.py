@@ -57,7 +57,7 @@ def health_check():
     return {"status": "healthy"}
 
 @app.post("/users/register")
-def register_user(name:str, phone_no:str, email:str, aadhaar_hash:str):
+def register_user(name:str, phone_no:str, email:str, aadhaar_hash:str, user_location:str):
     logging.info(f"Received registration request for user: {email}")
     
     salted_string = aadhaar_hash + AADHAAR_SALT
@@ -67,12 +67,12 @@ def register_user(name:str, phone_no:str, email:str, aadhaar_hash:str):
     cursor=conn.cursor()
     try:
         query="""
-        INSERT INTO users(name, phone_no, email, aadhaar_hash)
-        VALUES (%s, %s, %s, %s)
+        INSERT INTO users(name, phone_no, email, aadhaar_hash, user_location)
+        VALUES (%s, %s, %s, %s, %s)
         RETURNING id, name, email, phone_no;
         """
 
-        cursor.execute(query,(name, phone_no, email, final_aadhaar_hash))
+        cursor.execute(query,(name, phone_no, email, final_aadhaar_hash, user_location))
         new_user=cursor.fetchone()
         conn.commit()
         send_confirm_email(email)
