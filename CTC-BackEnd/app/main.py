@@ -1,4 +1,5 @@
 import psycopg2
+import psycopg2
 import boto3
 import logging
 import secrets
@@ -15,6 +16,8 @@ from app.core.database import get_db_connection
 # from app.otp_services.phno_otp_sns import send_sms_via_aws
 from app.otp_services.email_utils import send_email_otp, send_confirm_email
 
+# sudo systemctl restart ctc-backend
+# sudo systemctl status ctc-backend
 
 load_dotenv()
 AADHAAR_SALT = os.getenv("AADHAAR_SALT", "super_secret_default_salt_123!")
@@ -38,7 +41,7 @@ origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -48,6 +51,10 @@ otp_cache={}
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
 
 @app.post("/users/register")
 def register_user(name:str, phone_no:str, email:str, aadhaar_hash:str):
@@ -85,8 +92,10 @@ def register_user(name:str, phone_no:str, email:str, aadhaar_hash:str):
         else:
             raise HTTPException(status_code=400, detail="A user with these details already exists.")
     finally:
-        cursor.close()
-        conn.close()
+        if 'cursor' in locals() and cursor:
+            cursor.close()
+        if 'conn' in locals() and conn:
+            conn.close()
 
 # Phone No. OTP is replaced with Email OTP
 @app.post("/user/login")
@@ -113,12 +122,16 @@ def login_user(request: Request, email: str):
             "expires_in":"5 Miniutes"
         }
     except psycopg2.Error as e:
-        raise HTTPException(status_code=500, detail="Internal Server Error, Please Retry Later..")
+        logging.error(f"Database error during login: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
     finally:
-        cursor.close()
-        conn.close()
+        if 'cursor' in locals() and cursor:
+            cursor.close()
+        if 'conn' in locals() and conn:
+            conn.close()
 
 @app.post("/user/login_check")
+@limiter.limit("3/minute")
 def login_verify(email:str, otp:str):
     logging.info(f"Verifying OTP for user: {email}")
     if email not in otp_cache:
@@ -132,6 +145,7 @@ def login_verify(email:str, otp:str):
 
 
 @app.get("/report/presigned-url")
+@limiter.limit("3/minute")
 def get_presigned_url(filename:str, content_type:str):
     logging.info(f"Generating New Presigned URL for {filename}")
     unique_filename=f"{uuid.uuid4()}_{filename}"
@@ -153,6 +167,7 @@ def get_presigned_url(filename:str, content_type:str):
 
 
 @app.post("/report/submit")
+@limiter.limit("3/minute")
 def add_report(user_email: str, incident_ts: str, incident_location: str, incident_type: str, description: str, video_link: str):
     logging.info(f"Uploading User Report.")
     try:
@@ -163,14 +178,14 @@ def add_report(user_email: str, incident_ts: str, incident_location: str, incide
         user=cursor.fetchone()
         if not user:
             raise HTTPException(status_code=404, detail="User Not Found..")
-        user_id=user['id']
+        user_id=user[0]
         query = """
         INSERT INTO reports (user_id, incident_ts, incident_location, incident_type, description, video_link)
         VALUES (%s, %s, %s, %s, %s, %s)
         RETURNING id;
         """
         cursor.execute(query,(user_id, incident_ts, incident_location, incident_type, description, video_link))
-        new_report_id=cursor.fetchone()['id']
+        new_report_id=cursor.fetchone()[0]
         conn.commit()
         return {"message": "Report submitted successfully!", "report_id": new_report_id}
     except psycopg2.Error as e:
@@ -184,6 +199,78 @@ def add_report(user_email: str, incident_ts: str, incident_location: str, incide
             conn.close()
 
 
-@app.get("/health")
-def health_check():
-    return {"status": "healthy"}
+
+@app.get("/report/profile")
+@limiter.limit("3/minute")
+def get_profile(request: Request, email:str):
+    logging.info(f"Fetching user profile for the user with email: {email}")
+    conn=get_db_connection()
+    cursor=conn.cursor()
+    try:
+        query="""
+            SELECT id, name, phone_no, email, user_location FROM users
+            WHERE email=%s;
+        """
+        cursor.execute(query,(email,))
+        user=cursor.fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        return {
+            "user_id": f"USR-{user[0]}",
+            "name": user[1],
+            "phone_no": user[2],
+            "email": user[3],
+            "address": user[4] or "Address not updated"
+        }
+    except psycopg2.Error as e:
+        logging.error(f"Database error during profile fetch: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch profile")
+    finally:
+        if 'cursor' in locals() and cursor:
+            cursor.close()
+        if 'conn' in locals() and conn:
+            conn.close()
+
+@app.get("/report/history")
+@limiter.limit("3/minute")
+def get_reports(request: Request, email:str):
+    conn=get_db_connection()
+    cursor=conn.cursor()
+    try:
+        query1="""
+            SELECT id FROM users WHERE email=%s;
+        """
+        cursor.execute(query1,(email,))
+        user=cursor.fetchone()
+        if not user:
+            raise HTTPException(status_code=404, detail="User Not Found")
+        user_id=user[0]
+        query2="""
+            SELECT id, incident_type, incident_location, incident_ts, ai_status, ai_report, description
+            FROM reports
+            WHERE user_id=%s
+            ORDER BY report_timestamp DESC;
+        """
+        cursor.execute(query2,(user_id,))
+        reports=cursor.fetchall()
+        history=[]
+        for row in reports:
+            history.append({
+                "id": f"REP-{row[0]}",
+                "incident_type": row[1],
+                "incident_location": row[2],
+                "incident_ts": row[3],
+                "ai_status": row[4],
+                "description": row[6],
+                "ai_report": row[5]
+            })
+        return history
+    except psycopg2.Error as e:
+        logging.error(f"Database Failed To Fetch Report {e}")
+        raise HTTPException(status_code=500, detail="Failed To Fetch Report From Database")
+    finally:
+        if 'cursor' in locals() and cursor:
+            cursor.close()
+        if 'conn' in locals() and conn:
+            conn.close()
