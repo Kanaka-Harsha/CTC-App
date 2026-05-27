@@ -4,9 +4,38 @@ import time
 import os
 import urllib.parse
 from google import genai
+import psycopg2
 
 # Initialize AWS S3 client
 s3 = boto3.client('s3')
+
+def update_db_with_report(key, report_text, status='COMPLETED'):
+    """Updates the RDS database with the generated report."""
+    try:
+        conn = psycopg2.connect(
+            host=os.environ.get("DB_HOST"),
+            database=os.environ.get("DB_NAME"),
+            user=os.environ.get("DB_USER"),
+            password=os.environ.get("DB_PASSWORD"),
+            port=os.environ.get("DB_PORT", "5432")
+        )
+        cursor = conn.cursor()
+        
+        query = """
+            UPDATE reports 
+            SET ai_status = %s, ai_report = %s 
+            WHERE video_link LIKE %s
+        """
+        like_pattern = f"%{key}"
+        cursor.execute(query, (status, report_text, like_pattern))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print(f"Successfully updated DB for key: {key} with status: {status}")
+    except Exception as e:
+        print(f"Error updating DB: {e}")
+
 
 def process_video_with_gemini(local_file_path):
     """
@@ -58,7 +87,7 @@ def process_video_with_gemini(local_file_path):
     
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-3.5-flash",
             contents=[video_file, prompt]
         )
     except Exception as e:
@@ -107,23 +136,31 @@ def lambda_handler(event, context):
                 s3.download_file(bucket, key, local_file_path)
                 
                 # Process with Gemini
-                report_text = process_video_with_gemini(local_file_path)
-                
-                # Clean up markdown formatting if Gemini returned code blocks
-                if report_text.startswith("```json"):
-                    report_text = report_text[7:-3].strip()
-                elif report_text.startswith("```"):
-                    report_text = report_text[3:-3].strip()
+                try:
+                    report_text = process_video_with_gemini(local_file_path)
                     
-                report = json.loads(report_text)
-                
-                # Save it to a JSON file locally in /tmp as requested (and keep it / wait)
-                report_path = f"/tmp/report_{os.path.basename(key)}.json"
-                with open(report_path, 'w') as f:
-                    json.dump(report, f, indent=4)
+                    # Clean up markdown formatting if Gemini returned code blocks
+                    if report_text.startswith("```json"):
+                        report_text = report_text[7:-3].strip()
+                    elif report_text.startswith("```"):
+                        report_text = report_text[3:-3].strip()
+                        
+                    report = json.loads(report_text)
                     
-                print(f"Report generated successfully for {key}:")
-                print(json.dumps(report, indent=4))
+                    # Save it to a JSON file locally in /tmp as requested (and keep it / wait)
+                    report_path = f"/tmp/report_{os.path.basename(key)}.json"
+                    with open(report_path, 'w') as f:
+                        json.dump(report, f, indent=4)
+                        
+                    print(f"Report generated successfully for {key}:")
+                    print(json.dumps(report, indent=4))
+                    
+                    # Update DB with success
+                    update_db_with_report(key, json.dumps(report), 'COMPLETED')
+                except Exception as proc_e:
+                    print(f"Processing failed for {key}: {proc_e}")
+                    update_db_with_report(key, "Processing failed", 'FAILED')
+                    raise proc_e
                 
         except Exception as e:
             print(f"Error processing record: {e}")
