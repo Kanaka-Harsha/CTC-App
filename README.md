@@ -18,10 +18,11 @@ The **Citizen Traffic Camera (CTC)** platform addresses the compulsory report an
 
 ### 🌟 Key Features
 
-- **Resilient Uploads:** Direct-to-cloud multipart uploads (5MB slices) ensure reliability even on shaky 3G/4G mobile networks.
-- **Automated Intelligence:** Asynchronous event-driven pipelines automatically extract metadata (e.g., vehicle types, collision detection) using AWS Rekognition and Gemini models.
-- **Secure Authentication:** Stateless JWT-based authentication paired with Email OTP for seamless and secure access, Aadhaar data is stored in double hash along with SALTs in the database for privacy concerns.
-- **Scalable Infrastructure:** Designed with an event-driven architecture utilizing AWS S3, SQS, Lambda, EC2 and RDS to handle high traffic spikes seamlessly.
+- **Direct-to-S3 Uploads:** Multipart uploads securely stream heavy evidence directly to S3 via Pre-signed URLs, bypassing the backend server entirely to ensure maximum scalability.
+- **Automated Intelligence Pipeline:** An asynchronous, event-driven pipeline automatically extracts critical incident metadata (e.g., Accident, Theft, Harassment details) using the Gemini AI API via an S3 -> SQS -> AWS Lambda flow.
+- **Secure Authentication:** Stateless JWT-based authentication paired with Email OTP for seamless access. Aadhaar data is stored in double hash along with SALTs in the database for absolute privacy.
+- **Scalable Infrastructure:** Designed with an event-driven architecture utilizing AWS S3, SQS, Lambda, EC2, and RDS to handle high traffic spikes seamlessly.
+- **Comprehensive Reporting:** Users can view detailed histories of their submitted reports along with AI analysis results, and securely delete reports permanently from both the database and S3.
 - **Cost-Optimized Storage:** S3 Lifecycle policies automatically transition aging evidence to Glacier Deep Archive.
 
 ---
@@ -29,6 +30,16 @@ The **Citizen Traffic Camera (CTC)** platform addresses the compulsory report an
 ## 🏗️ System Architecture
 
 My cloud-native architecture is built for **resilience, high availability, and performance**. The frontend divides the large video files into multiple parts and securely streams them directly to S3 via pre-signed URLs, bypassing the application backend. An event-driven pipeline then processes the evidence asynchronously.
+
+### 📚 Technical Documentation & Deep Dives
+
+To deeply understand the inner workings of this platform, please refer to our comprehensive technical documents:
+
+- [📖 Master Comprehensive Architecture](./Technical-Docs/Comprehensive-Architecture.md) - End-to-end overview of the entire system.
+- [🖥️ Frontend System Design](./Technical-Docs/System-Design/01-Frontend-System-Design.md)
+- [⚙️ Backend System Design](./Technical-Docs/System-Design/02-Backend-System-Design.md)
+- [🗄️ Database System Design](./Technical-Docs/System-Design/03-Database-System-Design.md)
+- [☁️ AWS Cloud System Design](./Technical-Docs/System-Design/04-AWS-Cloud-System-Design.md)
 
 ```mermaid
 graph TD
@@ -63,8 +74,8 @@ graph TD
 
 ## 🛠️ Technology Stack
 
-| Domain                           | Technologies                             |
-| :------------------------------- | :--------------------------------------- |
+| Domain                     | Technologies                             |
+| :------------------------- | :--------------------------------------- |
 | **Frontend**               | React, Vite, TailwindCSS, AWS CloudFront |
 | **Backend**                | Python (FastAPI/Flask), JWT, Boto3       |
 | **Database**               | AWS RDS PostgreSQL                       |
@@ -79,8 +90,8 @@ The database is heavily normalized to ensure data integrity and efficient queryi
 
 ### 👥 Users Table
 
-| Column           | Type    | Description                  |
-| :--------------- | :------ | :--------------------------- |
+| Column         | Type    | Description                  |
+| :------------- | :------ | :--------------------------- |
 | `id`           | UUID    | Primary Key                  |
 | `name`         | VARCHAR | User's full name             |
 | `phone_no`     | VARCHAR | Encrypted contact info       |
@@ -89,8 +100,8 @@ The database is heavily normalized to ensure data integrity and efficient queryi
 
 ### 📹 Reports Table
 
-| Column                | Type      | Description                       |
-| :-------------------- | :-------- | :-------------------------------- |
+| Column              | Type      | Description                       |
+| :------------------ | :-------- | :-------------------------------- |
 | `id`                | UUID      | Primary Key                       |
 | `user_id`           | UUID      | Foreign Key (Users)               |
 | `incident_ts`       | TIMESTAMP | Timestamp of the incident         |
@@ -98,6 +109,18 @@ The database is heavily normalized to ensure data integrity and efficient queryi
 | `incident_type`     | VARCHAR   | Type (e.g., Collision, Violation) |
 | `description`       | TEXT      | Description of the incident       |
 | `video_link`        | VARCHAR   | Direct link to evidence           |
+
+---
+
+## 🧗 Challenges & Learnings
+
+Building a secure, cloud-native application comes with unique hurdles. Here are some of the key challenges we overcame:
+
+### The AWS Networking "Catch-22"
+
+**The Problem:** Our AWS Lambda function required internet access to send videos to the Gemini AI API, but it also needed to update our private AWS RDS PostgreSQL database. Placing the Lambda inside the VPC allowed database access but severed internet access (unless we paid for an expensive NAT Gateway). Placing it outside the VPC granted internet access but broke the database connection.
+
+**The Solution:** We architected a cost-effective workaround by making the RDS instance Publicly Accessible and keeping the Lambda outside the VPC. To maintain strict security, we locked down the RDS Security Group's inbound rules. We also had to correctly route the private database subnets to an Internet Gateway so the public IP could successfully return traffic to the Lambda function.
 
 ---
 
@@ -117,6 +140,7 @@ The database is heavily normalized to ensure data integrity and efficient queryi
    git clone https://github.com/Kanaka-Harsha/CTC-App.git
    cd CTC-App
    ```
+
 2. **Environment Variables**
    Create a `.env` file in the root directory (reference the `.env.example` file if available).
 
@@ -130,6 +154,7 @@ The database is heavily normalized to ensure data integrity and efficient queryi
 
    # More mentioned in the .env.example file
    ```
+
 3. **Backend Setup**
 
    ```bash
@@ -139,6 +164,7 @@ The database is heavily normalized to ensure data integrity and efficient queryi
    cd CTC-BackEnd
    fastapi dev app/main.py
    ```
+
 4. **Frontend Setup**
 
    ```bash
