@@ -57,7 +57,7 @@ def health_check():
 
 @app.post("/users/register")
 @limiter.limit("3/minute")
-def register_user(name:str, phone_no:str, email:str, aadhaar_hash:str, user_location:str):
+def register_user(request: Request, name:str, phone_no:str, email:str, aadhaar_hash:str, user_location:str):
     logging.info(f"Received registration request for user: {email}")
     
     salted_string = aadhaar_hash + AADHAAR_SALT # Add Salt
