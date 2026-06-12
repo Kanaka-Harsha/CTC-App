@@ -1,5 +1,7 @@
 # CTC App: Comprehensive Architecture Document
 
+![AWS Architecture Diagram](/C:/Users/Admin/.gemini/antigravity-ide/brain/67d3d9cd-fbcc-4ea4-b558-8abf41e292dc/official_aws_architecture_1779880935240.png)
+
 This document provides an end-to-end overview of the Citizen Traffic Camera (CTC) Application's architecture, including the codebase structure, endpoints, cloud infrastructure, and the core system design concepts implemented.
 
 ## 1. System Design Concepts Utilized

@@ -64,3 +64,7 @@ cdk.out/
 *.tfstate
 *.tfstate.backup
 .terraform.tfstate.lock.info
+
+CTC-Key-Pair-2.pem
+Technical-Docs/Imgs/
+learn.json
