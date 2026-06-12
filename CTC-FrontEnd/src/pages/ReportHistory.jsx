@@ -53,8 +53,8 @@ function ReportHistory() {
       const cleanId = reportId.toString().replace('REP-', '');
       
       console.log(`[DEV] Sending delete request for raw ID: ${cleanId}`);
-      // Passing report_id as query parameter since backend route is `@app.get("/report/history/delete")`
-      const response = await fetch(`${API_BASE_URL}/report/history/delete?report_id=${cleanId}`, {
+      // Passing rid as query parameter since backend route is `@app.get("/report/history/delete")`
+      const response = await fetch(`${API_BASE_URL}/report/history/delete?rid=${cleanId}`, {
         method: 'GET',
       });
       
@@ -82,11 +82,11 @@ function ReportHistory() {
   };
 
   if (loading) {
-    return <div className="page-container" style={{ textAlign: 'center', marginTop: '40px' }}>Loading reports...</div>;
+    return <div className="page-container fade-in" style={{ textAlign: 'center', marginTop: '40px' }}><span className="spinner spinner-primary"></span> Loading reports...</div>;
   }
 
   return (
-    <div className="page-container">
+    <div className="page-container fade-in">
       <div className="glass-card">
         <h1 style={{ marginBottom: '24px' }}>My Report History</h1>
         

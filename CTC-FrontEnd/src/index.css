@@ -1,12 +1,12 @@
 :root {
-  --primary-color: #000000; /* Black */
-  --primary-hover: #333333; /* Dark Gray */
-  --bg-color: #ffffff; /* White */
-  --surface-color: #ffffff; /* White */
-  --text-primary: #000000; /* Black */
-  --text-secondary: #555555; /* Medium Gray */
-  --border-color: #cccccc; /* Light Gray */
-  --error-color: #000000; /* Black instead of red to stick to B&W */
+  --primary-color: #2563eb; /* Balanced modern blue */
+  --primary-hover: #1d4ed8;
+  --bg-color: #f8fafc; /* Very light slate background */
+  --surface-color: #ffffff;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --border-color: #e2e8f0;
+  --error-color: #ef4444;
   
   --spacing-xs: 4px;
   --spacing-sm: 8px;
@@ -14,7 +14,29 @@
   --spacing-lg: 24px;
   --spacing-xl: 32px;
   
-  --border-radius: 4px; /* Slightly sharper edges for a B&W utilitarian look */
+  --border-radius: 8px; /* Softer edges */
+}
+
+/* Loader Spinner */
+.spinner {
+  border: 3px solid rgba(255,255,255,0.3);
+  border-left-color: #ffffff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.spinner-primary {
+  border: 3px solid rgba(37, 99, 235, 0.2);
+  border-left-color: var(--primary-color);
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 * { 
@@ -274,6 +296,9 @@ p {
 .page-container {
   max-width: 800px;
   margin: 0 auto;
+}
+
+.fade-in {
   animation: fadeIn 0.4s ease-out;
 }
 

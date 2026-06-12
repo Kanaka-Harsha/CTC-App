@@ -164,7 +164,7 @@ function UploadEvidence() {
   };
 
   return (
-    <div>
+    <div className="fade-in">
       <h1>Submit Official Report</h1>
       <p>Please fill out the details accurately. This information may be reviewed by authorities.</p>
 
@@ -261,7 +261,7 @@ function UploadEvidence() {
         </div>
 
         <button type="submit" className="btn-primary" style={{ marginTop: 'var(--spacing-lg)' }} disabled={loading}>
-          {loading ? 'Submitting...' : 'Submit Official Report'}
+          {loading ? <span className="spinner"></span> : 'Submit Official Report'}
         </button>
       </form>
     </div>

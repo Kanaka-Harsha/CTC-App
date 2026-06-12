@@ -11,7 +11,7 @@ function Home() {
     }
   }, [navigate]);
   return (
-    <div style={{ textAlign: 'center' }}>
+    <div className="fade-in" style={{ textAlign: 'center' }}>
       <img src="/CTC_Main.png" alt="CTC Logo" style={{ width: '120px', marginBottom: 'var(--spacing-md)' }} />
       <h1>Welcome to CTC</h1>
       <p style={{ fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '8px' }}>Citizen Traffic Camera</p>

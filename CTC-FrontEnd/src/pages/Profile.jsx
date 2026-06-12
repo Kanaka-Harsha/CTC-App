@@ -49,7 +49,7 @@ function Profile() {
   }, []);
 
   if (loading) {
-    return <div className="page-container" style={{ textAlign: 'center', marginTop: '40px' }}>Loading profile...</div>;
+    return <div className="page-container fade-in" style={{ textAlign: 'center', marginTop: '40px' }}><span className="spinner spinner-primary"></span> Loading profile...</div>;
   }
 
   if (!profileData) {
@@ -57,7 +57,7 @@ function Profile() {
   }
 
   return (
-    <div className="page-container">
+    <div className="page-container fade-in">
       <div className="glass-card">
         <div className="profile-header">
           <div className="profile-avatar">

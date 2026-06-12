@@ -98,7 +98,18 @@ function Login() {
         throw new Error(errorData.detail || 'Invalid OTP');
       }
 
-      console.log('[Login] Verification successful! Redirecting to /upload...');
+      console.log('[Login] Verification successful! Fetching user name...');
+      
+      try {
+        const profileResponse = await fetch(`${API_BASE_URL}/report/profile?email=${email}`);
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          localStorage.setItem('userName', profileData.name);
+        }
+      } catch (e) {
+        console.error('Failed to fetch profile during login', e);
+      }
+
       // Success!
       localStorage.setItem('isAuth', 'true');
       localStorage.setItem('userEmail', email); // Save email for the report submission
@@ -113,7 +124,7 @@ function Login() {
   };
 
   return (
-    <div>
+    <div className="fade-in">
       <h1>Login</h1>
       <p>{step === 1 ? 'Sign in to view your reports or submit new evidence.' : 'Enter the code sent to your email. (Please check your SPAM folder)'}</p>
 
@@ -133,7 +144,7 @@ function Login() {
             />
           </div>
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Sending...' : 'Send OTP'}
+            {loading ? <span className="spinner"></span> : 'Send OTP'}
           </button>
         </form>
       )}
@@ -152,7 +163,7 @@ function Login() {
             />
           </div>
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Verifying...' : 'Verify & Login'}
+            {loading ? <span className="spinner"></span> : 'Verify & Login'}
           </button>
           
           <button 

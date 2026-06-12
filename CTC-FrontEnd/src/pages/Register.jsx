@@ -86,7 +86,7 @@ function Register() {
   };
 
   return (
-    <div>
+    <div className="fade-in">
       <h1>Create Account</h1>
       <p>Register to submit official incident reports.</p>
 
@@ -119,7 +119,7 @@ function Register() {
         </div>
 
         <button type="submit" className="btn-primary" style={{ marginBottom: 'var(--spacing-lg)' }} disabled={loading}>
-          {loading ? 'Registering...' : 'Complete Registration'}
+          {loading ? <span className="spinner"></span> : 'Complete Registration'}
         </button>
       </form>
 
