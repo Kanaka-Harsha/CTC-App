@@ -1,46 +1,42 @@
 import logging
 import psycopg2
-import psycopg2
 import boto3
 import logging
 import secrets
 import hashlib
 import os
 import uuid
+from dotenv import load_dotenv
+from botocore.config import Config
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from dotenv import load_dotenv
 from fastapi import FastAPI,HTTPException,Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import get_db_connection
-# from app.otp_services.phno_otp_sns import send_sms_via_aws
 from app.otp_services.email_utils import send_email_otp, send_confirm_email
+# from app.otp_services.phno_otp_sns import send_sms_via_aws
 
-# sudo systemctl restart ctc-backend
-# sudo systemctl status ctc-backend
-# ctc-backend
-
-
+# Basic Declaration For Server
 load_dotenv()
-AADHAAR_SALT = os.getenv("AADHAAR_SALT", "super_secret_default_salt_123!")
+app=FastAPI()
+otp_cache={}
 
+# Server Variables
+AADHAAR_SALT = os.getenv("AADHAAR_SALT", "super_secret_default_salt_123!") # Backend Salt
+s3_client=boto3.client('s3', region_name='ap-south-1', endpoint_url='https://s3.ap-south-1.amazonaws.com', config=Config(signature_version='s3v4'))
+bucket_name=os.getenv("AWS_VIDEO_BUCKET_NAME")
+
+# Logging Config
 logging.basicConfig(
     filename='server.log',
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-
-from botocore.config import Config
-
-app=FastAPI()
-s3_client=boto3.client('s3', region_name='ap-south-1', endpoint_url='https://s3.ap-south-1.amazonaws.com', config=Config(signature_version='s3v4'))
-bucket_name=os.getenv("AWS_VIDEO_BUCKET_NAME")
-
+# Enabling CORS, for cross origin comms, FE-BE
 raw_origins = os.getenv("ALLOWED_ORIGINS", "*")
 origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -49,8 +45,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-otp_cache={}
-
+# Rate Limiting Config
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -59,12 +54,14 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 def health_check():
     return {"status": "healthy"}
 
+
 @app.post("/users/register")
+@limiter.limit("3/minute")
 def register_user(name:str, phone_no:str, email:str, aadhaar_hash:str, user_location:str):
     logging.info(f"Received registration request for user: {email}")
     
-    salted_string = aadhaar_hash + AADHAAR_SALT
-    final_aadhaar_hash = hashlib.sha256(salted_string.encode('utf-8')).hexdigest()
+    salted_string = aadhaar_hash + AADHAAR_SALT # Add Salt
+    final_aadhaar_hash = hashlib.sha256(salted_string.encode('utf-8')).hexdigest() # 2nd Hash Of AAdhaar Number 
 
     conn=get_db_connection()
     cursor=conn.cursor()
@@ -100,7 +97,7 @@ def register_user(name:str, phone_no:str, email:str, aadhaar_hash:str, user_loca
         if 'conn' in locals() and conn:
             conn.close()
 
-# Phone No. OTP is replaced with Email OTP
+
 @app.post("/user/login")
 @limiter.limit("3/minute")
 def login_user(request: Request, email: str):
@@ -133,6 +130,7 @@ def login_user(request: Request, email: str):
         if 'conn' in locals() and conn:
             conn.close()
 
+
 @app.post("/user/login_check")
 @limiter.limit("3/minute")
 def login_verify(request: Request, email:str, otp:str):
@@ -144,7 +142,6 @@ def login_verify(request: Request, email:str, otp:str):
         return {"message": "Login successful!"}
     else:
         raise HTTPException(status_code=401, detail="Invalid OTP.")
-
 
 
 @app.get("/report/presigned-url")
@@ -202,7 +199,6 @@ def add_report(request: Request, user_email: str, incident_ts: str, incident_loc
             conn.close()
 
 
-
 @app.get("/report/profile")
 @limiter.limit("3/minute")
 def get_profile(request: Request, email:str):
@@ -234,6 +230,7 @@ def get_profile(request: Request, email:str):
             cursor.close()
         if 'conn' in locals() and conn:
             conn.close()
+
 
 @app.get("/report/history")
 @limiter.limit("3/minute")
